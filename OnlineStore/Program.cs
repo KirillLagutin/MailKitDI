@@ -18,7 +18,7 @@ builder.Services.AddSwaggerGen();
 
 //builder.Services.AddSingleton<ITabs, InMemoryTabs>();
 builder.Services.AddScoped<IEmailSender, MailKitEmailSender>();
-builder.Services.AddScoped<ICurrentTime, UTCCurrentTime>();
+builder.Services.AddSingleton<ICurrentTime, UTCCurrentTime>();
 builder.Services.AddHostedService<SendBackgroundService>();
 
 var app = builder.Build();
@@ -55,7 +55,6 @@ app.MapPost("catalog/clear_phones", (HttpContext context) =>
 app.MapGet("/email_sender", (IEmailSender sender, ICurrentTime utc) => 
     sender.Send(
     "PV011",
-    "asp2022pd011@rodion-m.ru",
     "windows84@rambler.ru",
     "Server operation",
     "Local current time: " + 
