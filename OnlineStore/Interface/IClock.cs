@@ -1,6 +1,6 @@
 ﻿namespace OnlineStore.Interface;
 
-public interface ICurrentTime
+public interface IClock
 {
     DateTime GetCurrentTimeLocal();
     DateTime GetCurrentTimeUTC();

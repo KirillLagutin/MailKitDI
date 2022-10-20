@@ -1,25 +1,29 @@
 ﻿using MailKit.Net.Smtp;
+using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 using OnlineStore.Interface;
 
 namespace OnlineStore.Services;
 
-public class MailKitEmailSender : IEmailSender, IDisposable
+public class MailKitEmailSender : IEmailSender, IAsyncDisposable
 {
+    private readonly ILogger<MailKitEmailSender> _logger;
+    private readonly SmtpConfig _smtpConfig;
     private readonly SmtpClient _client;
 
-    public MailKitEmailSender()
+    public MailKitEmailSender(IOptionsSnapshot<SmtpConfig> options, ILogger<MailKitEmailSender> logger)
     {
+        _logger = logger;
+        _smtpConfig = options.Value;
         _client = new SmtpClient();
     }
 
-    public void Send(
-        string fromName,
-        string to, 
-        string subject, 
-        string bodyHtml
-        ) {
+    public async Task SendAsync(string fromName,
+        string to,
+        string subject,
+        string bodyHtml) {
+        _logger.LogInformation("Trying to send a letter");
         var message = new MimeMessage();
         var fromEmail = "asp2022pd011@rodion-m.ru";
         message.From.Add(new MailboxAddress(fromName, fromEmail));
@@ -28,19 +32,18 @@ public class MailKitEmailSender : IEmailSender, IDisposable
         message.Body = new TextPart(TextFormat.Html) { Text = bodyHtml };
         if (!_client.IsConnected)
         {
-            _client.Connect("smtp.beget.com", 25, false);
+            await _client.ConnectAsync(_smtpConfig.Host, _smtpConfig.Port, _smtpConfig.UseSsl);
         }
         if (!_client.IsAuthenticated)
         {
-            _client.Authenticate("asp2022pd011@rodion-m.ru", "6WU4x2be");
+            await _client.AuthenticateAsync(_smtpConfig.UserNAme, _smtpConfig.Password);
         }
-        _client.Send(message);
+        await _client.SendAsync(message);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _client.Disconnect(true);
+        await _client.DisconnectAsync(true);
         _client.Dispose();
     }
-    
 }

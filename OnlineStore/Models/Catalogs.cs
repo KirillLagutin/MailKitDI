@@ -4,8 +4,10 @@ using OnlineStore.Interface;
 namespace OnlineStore.Models;
 
 /*Класс через потокобезопасную коллекцию*/
-public class InMemoryTabs : ITabs
+public class Tabs : ITabs
 {
+    private readonly IClock _clock;
+    
     private ConcurrentBag<Tab> _tabs = new()
     {
         new Tab("IPad", 13, 30000),
@@ -17,7 +19,7 @@ public class InMemoryTabs : ITabs
 
     public ConcurrentBag<Tab> GetTabs()
     {
-        if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday)
+        if (_clock.GetCurrentTimeLocal().DayOfWeek == DayOfWeek.Monday)
         {
             return (ConcurrentBag<Tab>) _tabs.Select(tab =>
                 new Tab(tab.Brand, tab.Diagonal, tab.Price * 1.5M));

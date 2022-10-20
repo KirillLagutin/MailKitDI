@@ -2,7 +2,7 @@
 
 namespace OnlineStore.Services;
 
-public class UTCCurrentTime : ICurrentTime
+public class Clock : IClock
 {
     public DateTime GetCurrentTimeLocal() => DateTime.Now;
 

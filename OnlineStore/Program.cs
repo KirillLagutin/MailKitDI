@@ -16,9 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//builder.Services.AddSingleton<ITabs, InMemoryTabs>();
+
+builder.Services.Configure<SmtpConfig>(builder.Configuration.GetSection("SmtpConfig"));
+
+//builder.Services.AddSingleton<ITabs, Tabs>();
 builder.Services.AddScoped<IEmailSender, MailKitEmailSender>();
-builder.Services.AddSingleton<ICurrentTime, UTCCurrentTime>();
+builder.Services.AddSingleton<IClock, Clock>();
 builder.Services.AddHostedService<SendBackgroundService>();
 
 var app = builder.Build();
@@ -52,15 +55,13 @@ app.MapPost("catalog/clear_phones", (HttpContext context) =>
 });*/
 
 /* === EmailService and CurrentTime === */
-app.MapGet("/email_sender", (IEmailSender sender, ICurrentTime utc) => 
-    sender.Send(
-    "PV011",
-    "windows84@rambler.ru",
-    "Server operation",
-    "Local current time: " + 
-    utc.GetCurrentTimeLocal() +
-    ". <br>UTC current time: " + 
-    utc.GetCurrentTimeUTC()
-    ));
+async Task<string> SendMail(IEmailSender sender, IClock utc, 
+    string fromName, string to, string subject, string body)
+{
+    await sender.SendAsync(fromName, to, subject, body);
+    return "Ok";
+}
+
+app.MapGet("/email_sender", SendMail);
 
 app.Run();

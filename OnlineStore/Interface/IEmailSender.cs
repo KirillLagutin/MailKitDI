@@ -1,13 +1,10 @@
-﻿using OnlineStore.Services;
-
-namespace OnlineStore.Interface;
+﻿namespace OnlineStore.Interface;
 
 public interface IEmailSender
 {
-    void Send(
+    Task SendAsync(
         string fromName,
-        string to, 
-        string subject, 
-        string bodyHtml
-    );
+        string to,
+        string subject,
+        string bodyHtml);
 }
