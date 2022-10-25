@@ -7,6 +7,10 @@ namespace OnlineStore.Models;
 public class Tabs : ITabs
 {
     private readonly IClock _clock;
+    public Tabs(IClock clock)
+    {
+        _clock = clock;
+    }
     
     private ConcurrentBag<Tab> _tabs = new()
     {

@@ -10,8 +10,8 @@ public class Tab
 
     public Tab(string brand, double diagonal, decimal price)
     {
-        Brand = brand;
+        Brand =    brand;
         Diagonal = diagonal;
-        Price = price;
+        Price =    price;
     }
 }

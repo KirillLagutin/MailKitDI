@@ -1,21 +1,24 @@
 ﻿using OnlineStore.Interface;
 using Polly;
-using Polly.Retry;
 
 namespace OnlineStore.Services;
 
 public class SendBackgroundService : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IClock _currentTime;
+    private readonly IServiceProvider               _serviceProvider;
+    private readonly IClock                         _currentTime;
     private readonly ILogger<SendBackgroundService> _logger;
 
-    public SendBackgroundService(IServiceProvider serviceProvider, IClock currentTime, 
-        IHostApplicationLifetime applicationLifetime ,ILogger<SendBackgroundService> logger)
+    public SendBackgroundService(
+        IServiceProvider               serviceProvider, 
+        IClock                         currentTime, 
+        IHostApplicationLifetime       applicationLifetime, 
+        ILogger<SendBackgroundService> logger
+        )
     {
         _serviceProvider = serviceProvider;
-        _currentTime = currentTime;
-        _logger = logger;
+        _currentTime =     currentTime;
+        _logger =          logger;
         applicationLifetime.ApplicationStarted.Register(() =>
         {
             _logger.LogInformation("Server started successfully");
@@ -25,35 +28,55 @@ public class SendBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
-        var scopeSendMessage = scope.ServiceProvider.GetRequiredService<IEmailSender>();
+        var scopeSendMessage = 
+            scope.ServiceProvider.GetRequiredService<IEmailSender>();
             
-        Console.WriteLine("Server started successfully at " + _currentTime.GetCurrentTimeLocal());
+        Console.WriteLine("Server started successfully at " +
+                          _currentTime.GetCurrentTimeLocal());
         
         while (!stoppingToken.IsCancellationRequested)
         {
             var to = "windows84@rambler.ru";
-            const int attemptsLimit = 2;
+            const int attemptsLimit = 3;
 
-            AsyncRetryPolicy? policy = Policy.Handle<Exception>()
-                .RetryAsync(attemptsLimit, onRetry: (exception, retryCount) =>
+            var policy = Policy.Handle<Exception>().WaitAndRetryAsync
+            (
+                attemptsLimit, retryAttempt =>
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                (exception, retryCount) =>
                 {
-                    _logger.LogWarning(exception,
-                        "Exception: {Service}, {Recipient}. Попытка №{Attempt}",
-                        scopeSendMessage.GetType(), to, retryCount
+                    _logger.LogWarning(
+                        exception,
+                        "Error while sending email. Retrying: {Attempt}",
+                        retryCount
                     );
-                });
+                }
+            );
 
-            PolicyResult? result = await policy.ExecuteAndCaptureAsync(
-                _ => scopeSendMessage.SendAsync("PV011",
+            var result = await policy.ExecuteAndCaptureAsync
+            (
+                _ => scopeSendMessage.SendAsync
+                (
+                    "PV011",
                     to,
                     "Server operation",
-                    "Server is working properly!" +
-                    "<br>Total memory: " +
-                    GC.GetTotalMemory(false) + " bytes."), stoppingToken);
+                    "Server is working properly!" 
+                    + "<br> Total memory: " 
+                    + GC.GetTotalMemory(false) 
+                    + " bytes."
+                    + "<br> Current date "
+                    + _currentTime.GetCurrentTimeLocal()
+                ), 
+                stoppingToken
+            );
+            
             if (result.Outcome == OutcomeType.Failure)
             {
-                _logger.LogError(result.FinalException,
-                    "Exception: {Service}, {Recipient}",
+                _logger.LogError
+                (
+                    result.FinalException,
+                    "There was an error while sending email " +
+                    "[{Service}], [{Recipient}]",
                     scopeSendMessage.GetType(), to
                 );
             }

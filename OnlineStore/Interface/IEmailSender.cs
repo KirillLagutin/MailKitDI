@@ -6,5 +6,6 @@ public interface IEmailSender
         string fromName,
         string to,
         string subject,
-        string bodyHtml);
+        string bodyHtml
+        );
 }
