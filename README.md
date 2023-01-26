@@ -1,4 +1,4 @@
-# MailKitDI
+# Email рассылка писем
 DI, MailKit, BackgroundService, Dependency Lifetime
 ### ДЗ 6
 Создайте абстракцию, назначение которой – предоставлять текущее время:
